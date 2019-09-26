@@ -18,6 +18,11 @@ use Symfony\Component\HttpKernel\KernelInterface;
 class RebuildCommand extends Command
 {
     /**
+     * @var InputInterface
+     */
+    private $input;
+
+    /**
      * @var KernelInterface
      */
     private $kernel;
@@ -50,10 +55,17 @@ class RebuildCommand extends Command
             InputOption::VALUE_REQUIRED,
             'Limit rebuild to single branch, requires --repo option!'
         );
+        $this->addOption(
+            'dry-run',
+            null,
+            InputOption::VALUE_NONE,
+            'Only simulate, do not trigger builds'
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->input = $input;
         $this->output = $output;
 
         $client = new GithubClient();
@@ -104,6 +116,11 @@ class RebuildCommand extends Command
 
     private function triggerBuild(RepositoryConfig $repoConfig, string $branchName)
     {
+        if ($this->input->getOption('dry-run')) {
+            $this->output->writeln('Dry run! Would now trigger build at ' . $repoConfig->getBuildTriggerUrl());
+            return;
+        }
+
         $headers = ['Content-Type' => 'application/json'];
         $bodyData = [
             'source_type' => 'Branch',
