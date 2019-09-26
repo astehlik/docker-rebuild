@@ -1,4 +1,4 @@
-# Docker Hub build trigger Script
+# Docker Hub build trigger script
 
 This PHP based command line tool automatically triggers builds for all existing branches
 in configured GitHub repositories.
