@@ -1,0 +1,7 @@
+framework:
+  secret: '%env(APP_SECRET)%'
+
+  #esi: true
+  #fragments: true
+  php_errors:
+    log: true

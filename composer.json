@@ -1,0 +1,35 @@
+{
+	"name": "astehlik/docker-rebuild",
+	"description": "Loops over branches in a GitHub repo and triggers build in Docker Hub",
+	"type": "project",
+	"authors": [
+		{
+			"name": "Alexander Stehlik",
+			"email": "alexander.stehlik@gmail.com"
+		}
+	],
+	"require": {
+		"ext-json": "*",
+		"knplabs/github-api": "^2.11",
+		"php-http/guzzle6-adapter": "^1.1",
+		"symfony/flex": "^1.4",
+		"symfony/console": "^4.3",
+		"symfony/framework-bundle": "^4.3",
+		"symfony/dotenv": "^4.3",
+		"symfony/yaml": "^4.3"
+	},
+	"conflict": {
+		"symfony/symfony": "*"
+	},
+	"autoload": {
+		"psr-4": {
+			"Swh\\DockerRebuild\\": "src/"
+		}
+	},
+	"scripts": {
+		"auto-scripts": {
+			"cache:clear": "symfony-cmd",
+			"assets:install %PUBLIC_DIR%": "symfony-cmd"
+		}
+	}
+}
