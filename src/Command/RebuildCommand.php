@@ -32,6 +32,13 @@ class RebuildCommand extends Command
      */
     private $output;
 
+    /**
+     * The number of seconds to sleep between API requests to prevent rate limiting.
+     *
+     * @var int
+     */
+    private $sleepBetweenRequests = 5;
+
     public function __construct(KernelInterface $kernel)
     {
         $this->kernel = $kernel;
@@ -74,6 +81,11 @@ class RebuildCommand extends Command
         $limitRepo = $input->getOption('repo');
         $limitBranch = $input->getOption('branch');
 
+        $sleepMessage = sprintf(
+            'Sleeping for %d seconds to prevent API from blocking us...',
+            $this->sleepBetweenRequests
+        );
+
         foreach ($this->getRepositories() as $repoConfig) {
             if (!empty($limitRepo) && $limitRepo !== $repoConfig->getGithubCombinedRepositoryName()) {
                 continue;
@@ -98,6 +110,11 @@ class RebuildCommand extends Command
                 $output->writeln('');
                 $output->writeln('Triggering build for branch ' . $branchName);
                 $this->triggerBuild($repoConfig, $branchName);
+
+                if (!$this->isDryRun()) {
+                    $output->writeln($sleepMessage);
+                    sleep($this->sleepBetweenRequests);
+                }
             }
         }
     }
@@ -114,9 +131,17 @@ class RebuildCommand extends Command
         return $loader->getRepositories();
     }
 
+    /**
+     * @return bool|string|string[]|null
+     */
+    private function isDryRun()
+    {
+        return $this->input->getOption('dry-run');
+    }
+
     private function triggerBuild(RepositoryConfig $repoConfig, string $branchName)
     {
-        if ($this->input->getOption('dry-run')) {
+        if ($this->isDryRun()) {
             $this->output->writeln('Dry run! Would now trigger build at ' . $repoConfig->getBuildTriggerUrl());
             return;
         }
