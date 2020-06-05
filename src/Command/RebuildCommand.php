@@ -117,6 +117,8 @@ class RebuildCommand extends Command
                 }
             }
         }
+
+        return 0;
     }
 
     /**
