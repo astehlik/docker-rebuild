@@ -114,6 +114,9 @@ class RebuildCommand extends Command
             }
         }
 
+        $output->writeln('');
+        $output->writeln('');
+
         return 0;
     }
 
@@ -139,19 +142,17 @@ class RebuildCommand extends Command
     private function triggerBuild(RepositoryConfig $repoConfig, string $branchName)
     {
         if ($this->isDryRun()) {
-            $this->output->writeln(
-                'Dry run! Would now trigger for repo '
-                . $repoConfig->getGithubCombinedRepositoryName()
-                . ' and branch ' . $branchName
-            );
+            $this->output->writeln('Dry run! Would now trigger rebuild.');
             return;
         }
 
         $this->client->repo()->workflows()->dispatches(
             $repoConfig->getGithubNamespace(),
-            $repoConfig->getGithubNamespace(),
+            $repoConfig->getGithubRepository(),
             $repoConfig->getWorkflowId(),
             'refs/heads/' . $branchName
         );
+
+        $this->output->writeln('Successfully triggered rebuild.');
     }
 }

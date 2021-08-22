@@ -9,15 +9,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class ConfigLoader extends FileLoader
 {
-    /**
-     * Loads a resource.
-     *
-     * @param mixed $resource The resource
-     * @param string|null $type The resource type or null if unknown
-     *
-     * @throws Exception If something went wrong
-     */
-    public function load($resource, $type = null)
+    public function load($resource, $type = null): ApplicationConfig
     {
         $config = Yaml::parse(file_get_contents($resource));
 
@@ -33,7 +25,7 @@ class ConfigLoader extends FileLoader
 
         $repositories = [];
         foreach ($repositoryEntries as $repoConfig) {
-            $repositories = new RepositoryConfig(
+            $repositories[] = new RepositoryConfig(
                 $repoConfig['githubRepository'],
                 $repoConfig['workflowId'] ?? RepositoryConfig::DEFAULT_WORKFLOW_ID
             );
@@ -42,14 +34,6 @@ class ConfigLoader extends FileLoader
         return new ApplicationConfig($githubToken, $repositories);
     }
 
-    /**
-     * Returns whether this class supports the given resource.
-     *
-     * @param mixed $resource A resource
-     * @param string|null $type The resource type or null if unknown
-     *
-     * @return bool True if this class supports the given resource, false otherwise
-     */
     public function supports($resource, $type = null): bool
     {
         return is_string($resource)
