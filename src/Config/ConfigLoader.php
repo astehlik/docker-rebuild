@@ -7,21 +7,8 @@ use RuntimeException;
 use Symfony\Component\Config\Loader\FileLoader;
 use Symfony\Component\Yaml\Yaml;
 
-class RepositoriesConfigLoader extends FileLoader
+class ConfigLoader extends FileLoader
 {
-    /**
-     * @var RepositoryConfig[]|array
-     */
-    private $repositories = [];
-
-    /**
-     * @return array|RepositoryConfig[]
-     */
-    public function getRepositories(): array
-    {
-        return $this->repositories;
-    }
-
     /**
      * Loads a resource.
      *
@@ -34,16 +21,25 @@ class RepositoriesConfigLoader extends FileLoader
     {
         $config = Yaml::parse(file_get_contents($resource));
 
-        if (!is_array($config['repositories'])) {
+        $githubToken = $config['githubToken'] ?? '';
+        if (!$githubToken) {
+            throw new RuntimeException('No githubToken configured!');
+        }
+
+        $repositoryEntries = $config['repositories'] ?? [];
+        if (!is_array($config['repositories']) || count($repositoryEntries) === 0) {
             throw new RuntimeException('No repositories configured!');
         }
 
-        foreach ($config['repositories'] as $repoConfig) {
-            $this->repositories[] = new RepositoryConfig(
-                $repoConfig['buildTriggerUrl'],
-                $repoConfig['githubRepository']
+        $repositories = [];
+        foreach ($repositoryEntries as $repoConfig) {
+            $repositories = new RepositoryConfig(
+                $repoConfig['githubRepository'],
+                $repoConfig['workflowId'] ?? RepositoryConfig::DEFAULT_WORKFLOW_ID
             );
         }
+
+        return new ApplicationConfig($githubToken, $repositories);
     }
 
     /**
@@ -54,11 +50,9 @@ class RepositoriesConfigLoader extends FileLoader
      *
      * @return bool True if this class supports the given resource, false otherwise
      */
-    public function supports($resource, $type = null)
+    public function supports($resource, $type = null): bool
     {
-        return is_string($resource) && 'yaml' === pathinfo(
-                $resource,
-                PATHINFO_EXTENSION
-            );
+        return is_string($resource)
+            && 'yaml' === pathinfo($resource, PATHINFO_EXTENSION);
     }
 }

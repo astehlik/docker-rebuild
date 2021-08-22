@@ -3,10 +3,9 @@
 namespace Swh\DockerRebuild\Command;
 
 use Github\Client as GithubClient;
-use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Psr7\Request;
 use RuntimeException;
-use Swh\DockerRebuild\Config\RepositoriesConfigLoader;
+use Swh\DockerRebuild\Config\ApplicationConfig;
+use Swh\DockerRebuild\Config\ConfigLoader;
 use Swh\DockerRebuild\Config\RepositoryConfig;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Console\Command\Command;
@@ -17,27 +16,22 @@ use Symfony\Component\HttpKernel\KernelInterface;
 
 class RebuildCommand extends Command
 {
-    /**
-     * @var InputInterface
-     */
-    private $input;
+    private GithubClient $client;
 
-    /**
-     * @var KernelInterface
-     */
-    private $kernel;
+    private ApplicationConfig $config;
 
-    /**
-     * @var OutputInterface
-     */
-    private $output;
+    private InputInterface $input;
+
+    private KernelInterface $kernel;
+
+    private OutputInterface $output;
 
     /**
      * The number of seconds to sleep between API requests to prevent rate limiting.
      *
      * @var int
      */
-    private $sleepBetweenRequests = 5;
+    private int $sleepBetweenRequests = 5;
 
     public function __construct(KernelInterface $kernel)
     {
@@ -70,13 +64,15 @@ class RebuildCommand extends Command
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->input = $input;
         $this->output = $output;
 
-        $client = new GithubClient();
-        $repoApi = $client->api('repo');
+        $this->loadConfig();
+        $this->initClient();
+
+        $repoApi = $this->client->repo();
 
         $limitRepo = $input->getOption('repo');
         $limitBranch = $input->getOption('branch');
@@ -86,7 +82,7 @@ class RebuildCommand extends Command
             $this->sleepBetweenRequests
         );
 
-        foreach ($this->getRepositories() as $repoConfig) {
+        foreach ($this->config->getRepositories() as $repoConfig) {
             if (!empty($limitRepo) && $limitRepo !== $repoConfig->getGithubCombinedRepositoryName()) {
                 continue;
             }
@@ -121,46 +117,41 @@ class RebuildCommand extends Command
         return 0;
     }
 
-    /**
-     * @return array|RepositoryConfig[]
-     */
-    private function getRepositories(): array
+    private function initClient(): void
+    {
+        $this->client = new GithubClient();
+        $this->client->authenticate($this->config->getGithubToken(), null, GithubClient::AUTH_ACCESS_TOKEN);
+    }
+
+    private function isDryRun(): bool
+    {
+        return (bool)$this->input->getOption('dry-run');
+    }
+
+    private function loadConfig(): void
     {
         $configDirectory = $this->kernel->getProjectDir() . DIRECTORY_SEPARATOR . 'config';
         $fileLocator = new FileLocator([$configDirectory]);
-        $loader = new RepositoriesConfigLoader($fileLocator);
-        $loader->load($fileLocator->locate('repositories.yaml'));
-        return $loader->getRepositories();
-    }
-
-    /**
-     * @return bool|string|string[]|null
-     */
-    private function isDryRun()
-    {
-        return $this->input->getOption('dry-run');
+        $loader = new ConfigLoader($fileLocator);
+        $this->config = $loader->load($fileLocator->locate('repositories.yaml'));
     }
 
     private function triggerBuild(RepositoryConfig $repoConfig, string $branchName)
     {
         if ($this->isDryRun()) {
-            $this->output->writeln('Dry run! Would now trigger build at ' . $repoConfig->getBuildTriggerUrl());
+            $this->output->writeln(
+                'Dry run! Would now trigger for repo '
+                . $repoConfig->getGithubCombinedRepositoryName()
+                . ' and branch ' . $branchName
+            );
             return;
         }
 
-        $headers = ['Content-Type' => 'application/json'];
-        $bodyData = [
-            'source_type' => 'Branch',
-            'source_name' => $branchName,
-        ];
-        $request = new Request('POST', $repoConfig->getBuildTriggerUrl(), $headers, json_encode($bodyData));
-
-        $client = new GuzzleClient();
-        $response = $client->send($request);
-
-        $responseData = json_decode($response->getBody()->getContents(), true);
-        $this->output->writeln('Response code: ' . $response->getStatusCode() . ': ' . $response->getReasonPhrase());
-        $this->output->writeln('Build trigger state: ' . $responseData['state']);
-        $this->output->writeln('Related image: ' . $responseData['image']);
+        $this->client->repo()->workflows()->dispatches(
+            $repoConfig->getGithubNamespace(),
+            $repoConfig->getGithubNamespace(),
+            $repoConfig->getWorkflowId(),
+            'refs/heads/' . $branchName
+        );
     }
 }

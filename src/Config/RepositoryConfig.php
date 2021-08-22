@@ -2,37 +2,27 @@
 
 namespace Swh\DockerRebuild\Config;
 
+use JetBrains\PhpStorm\Pure;
+
 class RepositoryConfig
 {
-    /**
-     * @var string
-     */
-    private $buildTriggerUrl;
+    public const DEFAULT_WORKFLOW_ID = 'main.yml';
 
-    /**
-     * @var string
-     */
-    private $githubNamespace;
+    private string $githubNamespace;
 
-    /**
-     * @var string
-     */
-    private $githubRepository;
+    private string $githubRepository;
 
-    public function __construct(string $buildTriggerUrl, string $combinedGithubRepoIdentifier)
+    private string|int $workflowId;
+
+    public function __construct(string $combinedGithubRepoIdentifier, string|int $workflowId)
     {
-        $this->buildTriggerUrl = $buildTriggerUrl;
-
         $repoParts = explode('/', $combinedGithubRepoIdentifier);
         $this->githubNamespace = $repoParts[0];
         $this->githubRepository = $repoParts[1];
+        $this->workflowId = $workflowId;
     }
 
-    public function getBuildTriggerUrl(): string
-    {
-        return $this->buildTriggerUrl;
-    }
-
+    #[Pure]
     public function getGithubCombinedRepositoryName(): string
     {
         return $this->getGithubNamespace() . '/' . $this->getGithubRepository();
@@ -46,5 +36,10 @@ class RepositoryConfig
     public function getGithubRepository(): string
     {
         return $this->githubRepository;
+    }
+
+    public function getWorkflowId(): string|int
+    {
+        return $this->workflowId;
     }
 }
