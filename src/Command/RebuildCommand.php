@@ -2,6 +2,7 @@
 
 namespace Swh\DockerRebuild\Command;
 
+use Github\AuthMethod;
 use Github\Client as GithubClient;
 use RuntimeException;
 use Swh\DockerRebuild\Config\ApplicationConfig;
@@ -123,7 +124,7 @@ class RebuildCommand extends Command
     private function initClient(): void
     {
         $this->client = new GithubClient();
-        $this->client->authenticate($this->config->getGithubToken(), null, GithubClient::AUTH_ACCESS_TOKEN);
+        $this->client->authenticate($this->config->getGithubToken(), null, AuthMethod::ACCESS_TOKEN);
     }
 
     private function isDryRun(): bool
