@@ -11,7 +11,7 @@ final class ApplicationConfig
     /**
      * @var array<int, RepositoryConfig>
      */
-    private array $repositories = [];
+    private array $repositories;
 
     /**
      * @param string $githubToken

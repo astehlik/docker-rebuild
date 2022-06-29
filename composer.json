@@ -10,15 +10,15 @@
 	],
 	"require": {
 		"ext-json": "*",
-		"php": "^8.0",
-		"knplabs/github-api": "^3.0",
-		"symfony/flex": "^1.14",
-		"guzzlehttp/guzzle": "^7.0.1",
-		"http-interop/http-factory-guzzle": "^1.0",
-		"symfony/console": "^5.3",
-		"symfony/framework-bundle": "^5.3",
-		"symfony/dotenv": "^5.3",
-		"symfony/yaml": "^5.3"
+		"php": "^8.1",
+		"knplabs/github-api": "^3.7",
+		"symfony/flex": "^2.2",
+		"guzzlehttp/guzzle": "^7.4",
+		"http-interop/http-factory-guzzle": "^1.2",
+		"symfony/console": "^6.1",
+		"symfony/framework-bundle": "^6.1",
+		"symfony/dotenv": "^6.1",
+		"symfony/yaml": "^6.1"
 	},
 	"conflict": {
 		"symfony/symfony": "*"
@@ -32,6 +32,11 @@
 		"auto-scripts": {
 			"cache:clear": "symfony-cmd",
 			"assets:install %PUBLIC_DIR%": "symfony-cmd"
+		}
+	},
+	"config": {
+		"allow-plugins": {
+			"symfony/flex": true
 		}
 	}
 }
