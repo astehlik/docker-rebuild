@@ -2,7 +2,6 @@
 
 namespace Swh\DockerRebuild\Config;
 
-use Exception;
 use RuntimeException;
 use Symfony\Component\Config\Loader\FileLoader;
 use Symfony\Component\Yaml\Yaml;
